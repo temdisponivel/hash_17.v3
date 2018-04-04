@@ -29,6 +29,8 @@ namespace hash
         public bool BoolValueFalse;
         public char CharValue;
         public Directory Directory;
+        [MemberName("FILE_TYPES")]
+        public FileType[] FileTypes;
     }
 
     public struct Directory

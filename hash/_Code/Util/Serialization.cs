@@ -52,6 +52,31 @@ namespace hash.Util
         public List<SerializableMember<string>> StringValues;
         public List<SerializableMember<SerializableObject>> ComplexValues;
         public List<SerializableMember<Array>> ArrayValues;
+        public List<SerializableMember<Enum>> EnumValues;
+    }
+
+    public class DeseriazableMember
+    {
+        public string Name;
+        public Type Type;
+    }
+
+    public class DeserializableObject
+    {
+        public List<DeseriazableMember> BoolMembers;
+        public List<DeseriazableMember> IntMembers;
+        public List<DeseriazableMember> FloatMembers;
+        public List<DeseriazableMember> StringMembers;
+        public List<DeseriazableMember> ComplexMembers;
+        public List<DeseriazableMember> ArrayMembers;
+    }
+
+    public struct SerializableMemberInfo
+    {
+        public bool IsSerializable;
+        public string Name;
+        public object MemberValue;
+        public Type MemberType;
     }
 
     public static class Serialization
@@ -80,7 +105,86 @@ namespace hash.Util
             return default(T);
         }
 
-        private static SerializableObject GetSerializableObjectFromType(Type type, object obj)
+        public static DeserializableObject GetDeserializableObject(Type objectType)
+        {
+            DeserializableObject result = new DeserializableObject();
+
+            result.BoolMembers = new List<DeseriazableMember>();
+            result.IntMembers = new List<DeseriazableMember>();
+            result.FloatMembers = new List<DeseriazableMember>();
+            result.StringMembers = new List<DeseriazableMember>();
+            result.ComplexMembers = new List<DeseriazableMember>();
+            result.ArrayMembers = new List<DeseriazableMember>();
+
+            MemberInfo[] members = objectType.GetMembers();
+
+            int len = members.Length;
+            for (int i = 0; i < len; i++)
+            {
+                MemberInfo memberInfo = members[i];
+
+                SerializableMemberInfo info = GetMemberInfo(
+                    objectType,
+                    null,
+                    memberInfo
+                );
+
+                if (info.IsSerializable)
+                {
+                    bool isPrimitive = info.MemberType.IsPrimitive || 
+                                       info.MemberType == typeof(string);
+
+                    if (isPrimitive)
+                    {
+                        if (info.MemberType == typeof(bool))
+                        {
+                            DeseriazableMember member = new DeseriazableMember();
+                            member.Name = info.Name;
+                            member.Type = typeof(bool);
+                            result.BoolMembers.Add(member);
+                        }
+                        else if (info.MemberType == typeof(int))
+                        {
+                            DeseriazableMember member = new DeseriazableMember();
+                            member.Name = info.Name;
+                            member.Type = typeof(int);
+                            result.IntMembers.Add(member);
+                        }
+                        else if (info.MemberType == typeof(float))
+                        {
+                            DeseriazableMember member = new DeseriazableMember();
+                            member.Name = info.Name;
+                            member.Type = typeof(float);
+                            result.FloatMembers.Add(member);
+                        }
+                        else if (info.MemberType == typeof(string))
+                        {
+                            DeseriazableMember member = new DeseriazableMember();
+                            member.Type = typeof(string);
+                            result.StringMembers.Add(member);
+                        }
+                    }
+                    else if (info.MemberType.IsArray)
+                    {
+                        DeseriazableMember member = new DeseriazableMember();
+                        member.Name = info.Name;
+                        member.Type = info.MemberType;
+                        result.ArrayMembers.Add(member);
+                    }
+                    else
+                    {
+                        DeseriazableMember member = new DeseriazableMember();
+                        member.Name = info.Name;
+                        member.Type = info.MemberType;
+                        result.ComplexMembers.Add(member);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public static SerializableObject GetSerializableObjectFromType(Type type, object obj)
         {
             SerializableObject result = new SerializableObject();
 
@@ -90,6 +194,7 @@ namespace hash.Util
             result.StringValues = new List<SerializableMember<string>>();
             result.ComplexValues = new List<SerializableMember<SerializableObject>>();
             result.ArrayValues = new List<SerializableMember<Array>>();
+            result.EnumValues = new List<SerializableMember<Enum>>();
 
             MemberInfo[] members = type.GetMembers();
 
@@ -97,67 +202,91 @@ namespace hash.Util
             for (int i = 0; i < len; i++)
             {
                 MemberInfo info = members[i];
-                MemberTypes memberTypeType = info.MemberType;
 
-                if ((memberTypeType & (MemberTypes.Field | MemberTypes.Property)) != 0)
+                SerializableMemberInfo serializableInfo = GetMemberInfo(
+                    type,
+                    obj,
+                    info
+                );
+
+                if (serializableInfo.IsSerializable)
                 {
-                    bool serialize = true;
-                    string name = info.Name;
-
-                    IEnumerable<CustomAttributeData> attributes = info.CustomAttributes;
-                    foreach (var attributeData in attributes)
-                    {
-                        if (attributeData.AttributeType == typeof(MemberIgnoreAttribute))
-                        {
-                            serialize = false;
-                            break;
-                        }
-                        else if (attributeData.AttributeType == typeof(MemberNameAttribute))
-                        {
-                            // Name attribute only has one argument
-                            name = attributeData.ConstructorArguments[0].Value as string;
-                        }
-                    }
-
-                    if ((memberTypeType & MemberTypes.Property) != 0)
-                    {
-                        PropertyInfo property = type.GetProperty(info.Name);
-                        if (!property.CanWrite)
-                            serialize = false;
-                    }
-
-                    if (serialize)
-                    {
-                        Type memberType;
-                        object memberValue;
-                        if ((memberTypeType & MemberTypes.Field) != 0)
-                        {
-                            FieldInfo field = type.GetField(info.Name);
-                            memberType = field.FieldType;
-                            memberValue = field.GetValue(obj);
-                        }
-                        else
-                        {
-                            PropertyInfo property = type.GetProperty(info.Name);
-                            memberType = property.PropertyType;
-                            memberValue = property.GetValue(obj);
-                        }
-
-                        HandleMember(name, memberType, memberValue, result);
-                    }
+                    HandleMember(
+                        serializableInfo.Name,
+                        serializableInfo.MemberType,
+                        serializableInfo.MemberValue,
+                        result
+                    );
                 }
             }
 
             return result;
         }
 
-        private static void HandleMember(string name, Type type, object value, SerializableObject obj)
+        public static SerializableMemberInfo GetMemberInfo(
+            Type objectType,
+            object obj,
+            MemberInfo info
+        )
         {
-            // Don't handle generic types yet!
-            if (type.IsGenericType)
-                return;
+            SerializableMemberInfo result = new SerializableMemberInfo();
 
-            bool isPrimitive = type.IsPrimitive || type == typeof(string) || type.IsEnum;
+            result.Name = info.Name;
+            result.IsSerializable = true;
+
+            if ((info.MemberType & (MemberTypes.Field | MemberTypes.Property)) == 0)
+                result.IsSerializable = false;
+            else
+            {
+                IEnumerable<CustomAttributeData> attributes = info.CustomAttributes;
+                foreach (var attributeData in attributes)
+                {
+                    if (attributeData.AttributeType == typeof(MemberIgnoreAttribute))
+                    {
+                        result.IsSerializable = false;
+                        break;
+                    }
+                    else if (attributeData.AttributeType == typeof(MemberNameAttribute))
+                        result.Name = attributeData.ConstructorArguments[0].Value as string;
+                }
+
+                if ((info.MemberType & MemberTypes.Property) != 0)
+                {
+                    PropertyInfo property = objectType.GetProperty(info.Name);
+                    if (!property.CanWrite)
+                        result.IsSerializable = false;
+                }
+            }
+
+            if (result.IsSerializable)
+            {
+                if ((info.MemberType & MemberTypes.Field) != 0)
+                {
+                    FieldInfo field = objectType.GetField(info.Name);
+                    result.MemberType = field.FieldType;
+
+                    if (obj != null)
+                        result.MemberValue = field.GetValue(obj);
+                }
+                else
+                {
+                    PropertyInfo property = objectType.GetProperty(info.Name);
+                    result.MemberType = property.PropertyType;
+
+                    if (obj != null)
+                        result.MemberValue = property.GetValue(obj);
+                }
+
+                if (result.MemberType.IsGenericType)
+                    result.IsSerializable = false;
+            }
+
+            return result;
+        }
+
+        public static void HandleMember(string name, Type type, object value, SerializableObject obj)
+        {
+            bool isPrimitive = type.IsPrimitive || type == typeof(string);
 
             if (isPrimitive)
             {
@@ -182,7 +311,7 @@ namespace hash.Util
                     member.Value = (float) value;
                     obj.FloatValues.Add(member);
                 }
-                else if (type == typeof(string) || type.IsEnum)
+                else if (type == typeof(string))
                 {
                     SerializableMember<string> member = new SerializableMember<string>();
                     member.Name = name;
@@ -201,6 +330,13 @@ namespace hash.Util
                 member.Name = name;
                 member.Value = value as Array;
                 obj.ArrayValues.Add(member);
+            }
+            else if (type.IsEnum)
+            {
+                SerializableMember<Enum> member = new SerializableMember<Enum>();
+                member.Name = name;
+                member.Value = value as Enum;
+                obj.EnumValues.Add(member);
             }
             else
             {
@@ -237,6 +373,12 @@ namespace hash.Util
                 WriteString(builder, stringValue.Name, stringValue.Value);
             }
             
+            for (int i = 0; i < serializableObject.EnumValues.Count; i++)
+            {
+                SerializableMember<Enum> numValue = serializableObject.EnumValues[i];
+                WriteEnum(builder, numValue.Name, numValue.Value);
+            }
+
             for (int i = 0; i < serializableObject.ArrayValues.Count; i++)
             {
                 SerializableMember<Array> arrayValues = serializableObject.ArrayValues[i];
@@ -250,31 +392,24 @@ namespace hash.Util
             }
         }
 
-        private static void WriteBool(StringBuilder builder, string name, bool value)
+        public static void WriteBool(StringBuilder builder, string name, bool value)
         {
             builder.AppendFormat("{0} : {1}\n", name, value ? "true" : "false");
         }
 
-        private static void WriteInt(StringBuilder builder, string name, int value)
+        public static void WriteInt(StringBuilder builder, string name, int value)
         {
             builder.AppendFormat("{0} : {1:D}\n", name, value);
         }
 
-        private static void WriteFloat(StringBuilder builder, string name, float value)
+        public static void WriteFloat(StringBuilder builder, string name, float value)
         {
             builder.AppendFormat("{0} : {1:F}\n", name, value);
         }
 
-        private static void WriteString(StringBuilder builder, string name, string value)
+        public static void WriteString(StringBuilder builder, string name, string value)
         {
             builder.AppendFormat("{0} : \"{1}\"\n", name, value);
-        }
-
-        public static void WriteComplex(StringBuilder builder, string name, SerializableObject value)
-        {
-            builder.AppendFormat("{0} : {{\n", name);
-            WriteObject(value, builder);
-            builder.AppendFormat("}}\n");
         }
 
         public static void WriteArray(StringBuilder builder, string name, Array value)
@@ -287,9 +422,8 @@ namespace hash.Util
                 object elementValue = value.GetValue(i);
                 Type elementType = elementValue.GetType();
 
-                bool isPrimitive = elementType.IsPrimitive || 
-                                   elementType == typeof(string) || 
-                                   elementType.IsEnum;
+                bool isPrimitive = elementType.IsPrimitive ||
+                                   elementType == typeof(string);
 
                 if (isPrimitive)
                 {
@@ -305,29 +439,40 @@ namespace hash.Util
                     {
                         WriteFloat(builder, i.ToString(), (float) elementValue);
                     }
-                    else if (elementType == typeof(string) || elementType.IsEnum)
+                    else if (elementType == typeof(string))
                     {
-                        string valueStr;
-                        if (elementType.IsEnum)
-                            valueStr = Enum.GetName(elementType, elementValue);
-                        else
-                            valueStr = (string) elementValue;
-                        
+                        string valueStr = (string) elementValue;
                         WriteString(builder, i.ToString(), valueStr);
                     }
                 }
+                else if (elementType.IsEnum)
+                {
+                    WriteEnum(builder, i.ToString(), (Enum) elementValue);
+                }
                 else
                 {
-                    SerializableObject serializableObject =  GetSerializableObjectFromType(
-                        elementType, 
+                    SerializableObject serializableObject = GetSerializableObjectFromType(
+                        elementType,
                         elementValue
                     );
-                    
+
                     WriteComplex(builder, i.ToString(), serializableObject);
                 }
             }
 
             builder.Append("]\n");
+        }
+        
+        public static void WriteComplex(StringBuilder builder, string name, SerializableObject value)
+        {
+            builder.AppendFormat("{0} : {{\n", name);
+            WriteObject(value, builder);
+            builder.AppendFormat("}}\n");
+        }
+
+        public static void WriteEnum(StringBuilder builder, string name, Enum value)
+        {
+            builder.AppendFormat("{0} : {1}\n", name, value.ToString());
         }
     }
 }

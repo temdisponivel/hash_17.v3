@@ -31,9 +31,32 @@ namespace hash
             file.Directory.Name = "DIR_NAME_MALUCO";
             file.Directory.FilesIds = new string[] {"10", "55", "99","85"};
             file.Directory.ChildrenDirectoriesIds = new string[] {"ALLLALALAL"};
+            file.FileTypes = new []{FileType.Image,FileType.Text,FileType.Image};
+            
             DeviceUtil.OpenFile(file);
             byte[] serialized = Serialization.Serialize(file);
             Console.WriteLine(Serialization.ByteArrayToString(serialized));
+            Console.ReadKey();
+
+            DeserializableObject obj = Serialization.GetDeserializableObject(typeof(File));
+            for (int i = 0; i < obj.BoolMembers.Count; i++)
+                Console.WriteLine("BOOL: {0}", obj.BoolMembers[i].Name);
+            
+            for (int i = 0; i < obj.IntMembers.Count; i++)
+                Console.WriteLine("INT: {0}", obj.IntMembers[i].Name);
+            
+            for (int i = 0; i < obj.FloatMembers.Count; i++)
+                Console.WriteLine("FLOAT: {0}", obj.FloatMembers[i].Name);
+            
+            for (int i = 0; i < obj.StringMembers.Count; i++)
+                Console.WriteLine("STRING: {0}", obj.StringMembers[i].Name);
+            
+            for (int i = 0; i < obj.ArrayMembers.Count; i++)
+                Console.WriteLine("{0}: {1}", obj.ArrayMembers[i].Type, obj.ArrayMembers[i].Name);
+            
+            for (int i = 0; i < obj.ComplexMembers.Count; i++)
+                Console.WriteLine("{0}: {1}", obj.ComplexMembers[i].Type, obj.ComplexMembers[i].Name);
+
             Console.ReadKey();
         }
     }
