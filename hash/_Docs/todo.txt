@@ -1,0 +1,5 @@
+Serialization:
+    - Deserialization
+    - Add versioning
+    - Improve packing, performance, etc
+    - Serialize generics ****
