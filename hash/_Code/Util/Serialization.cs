@@ -69,6 +69,7 @@ namespace hash.Util
         public List<DeseriazableMember> StringMembers;
         public List<DeseriazableMember> ComplexMembers;
         public List<DeseriazableMember> ArrayMembers;
+        public List<DeseriazableMember> EnumMembers;
     }
 
     public struct SerializableMemberInfo
@@ -115,6 +116,7 @@ namespace hash.Util
             result.StringMembers = new List<DeseriazableMember>();
             result.ComplexMembers = new List<DeseriazableMember>();
             result.ArrayMembers = new List<DeseriazableMember>();
+            result.EnumMembers = new List<DeseriazableMember>();
 
             MemberInfo[] members = objectType.GetMembers();
 
@@ -160,6 +162,7 @@ namespace hash.Util
                         else if (info.MemberType == typeof(string))
                         {
                             DeseriazableMember member = new DeseriazableMember();
+                            member.Name = info.Name;
                             member.Type = typeof(string);
                             result.StringMembers.Add(member);
                         }
@@ -170,6 +173,13 @@ namespace hash.Util
                         member.Name = info.Name;
                         member.Type = info.MemberType;
                         result.ArrayMembers.Add(member);
+                    }
+                    else if (info.MemberType.IsEnum)
+                    {
+                        DeseriazableMember member = new DeseriazableMember();
+                        member.Name = info.Name;
+                        member.Type = info.MemberType;
+                        result.EnumMembers.Add(member);
                     }
                     else
                     {

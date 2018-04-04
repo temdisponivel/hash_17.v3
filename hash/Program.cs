@@ -51,11 +51,14 @@ namespace hash
             for (int i = 0; i < obj.StringMembers.Count; i++)
                 Console.WriteLine("STRING: {0}", obj.StringMembers[i].Name);
             
+            for (int i = 0; i < obj.EnumMembers.Count; i++)
+                Console.WriteLine("ENUM: {0} : {1}", obj.EnumMembers[i].Type, obj.EnumMembers[i].Name);
+            
             for (int i = 0; i < obj.ArrayMembers.Count; i++)
-                Console.WriteLine("{0}: {1}", obj.ArrayMembers[i].Type, obj.ArrayMembers[i].Name);
+                Console.WriteLine("ARRAY: {0}: {1}", obj.ArrayMembers[i].Type, obj.ArrayMembers[i].Name);
             
             for (int i = 0; i < obj.ComplexMembers.Count; i++)
-                Console.WriteLine("{0}: {1}", obj.ComplexMembers[i].Type, obj.ComplexMembers[i].Name);
+                Console.WriteLine("COMPLEX: {0}: {1}", obj.ComplexMembers[i].Type, obj.ComplexMembers[i].Name);
 
             Console.ReadKey();
         }
