@@ -1,7 +1,6 @@
-﻿using System.Diagnostics;
-using System.Runtime.ExceptionServices;
-using System.Security.AccessControl;
-using hash.Util;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace hash
 {
@@ -10,68 +9,55 @@ namespace hash
         Image,
         Text,
     }
-    
+
     public struct File
     {
-        public FileType FileType; 
-        [MemberName("ID_DOIDO")]
+        public FileType FileType;
         public int Id;
         public string Name;
         public string RealFilePath;
-        public float FloatValue;
-        [MemberName("COMPLEX_DIRECTORY")]
-        public Device Device;
-        [MemberName("COMPLEX_DIRECTORY")]
-        public Device[] Devices;
-        [MemberIgnore]
-        public int NonSerializable;
-        public bool BoolValueTrue;
-        public bool BoolValueFalse;
-        public char CharValue;
-        public Directory Directory;
-        [MemberName("FILE_TYPES")]
-        public FileType[] FileTypes;
     }
 
     public struct Directory
     {
         public int Id;
         public string Name;
-        public string[] ChildrenDirectoriesIds;
-        public string[] FilesIds;
+        public List<int> ChildrenDirectoriesIds;
+        public List<int> FilesIds;
     }
-    
+
     public struct Storage
     {
         public int Id;
-        public string[] AllFilesIds;
-        public string[] AllDirectoriesIds;
+        public List<int> AllFilesIds;
+        public List<int> AllDirectoriesIds;
     }
-    
+
     public struct Device
     {
-        public int[] Values;
         public int Id;
         public string Name;
         public string IP;
-        public string StorageId;
+        public int StorageId;
     }
-    
+
     public struct DeviceData
     {
-        public Device[] AllDevices;
-        public Storage[] AllStorages;
-        public File[] AllFiles;
-        public Directory[] AllDirectories;
+        public List<Device> AllDevices;
+        public List<Storage> AllStorages;
+        public List<File> AllFiles;
+        public List<Directory> AllDirectories;
     }
-    
-    public static class DeviceUtil 
+
+    public static class DeviceUtil
     {
+        public const string ROOT_DIR_NAME = "/";
+
         public static bool FindDevice(int id, DeviceData deviceData, out Device device)
         {
             device = default(Device);
-            
-            int len = deviceData.AllDevices.Length;
+
+            int len = deviceData.AllDevices.Count;
             for (int i = 0; i < len; i++)
             {
                 device = deviceData.AllDevices[i];
@@ -82,11 +68,11 @@ namespace hash
             return false;
         }
 
-        public static bool FindStorage(int  id, DeviceData deviceData, out Storage storage)
+        public static bool FindStorage(int id, DeviceData deviceData, out Storage storage)
         {
             storage = default(Storage);
-            
-            int len = deviceData.AllStorages.Length;
+
+            int len = deviceData.AllStorages.Count;
             for (int i = 0; i < len; i++)
             {
                 storage = deviceData.AllStorages[i];
@@ -96,12 +82,12 @@ namespace hash
 
             return false;
         }
-        
-        public static bool FindDirectory(int  id, DeviceData deviceData, out Directory directory)
+
+        public static bool FindDirectory(int id, DeviceData deviceData, out Directory directory)
         {
             directory = default(Directory);
-            
-            int len = deviceData.AllDirectories.Length;
+
+            int len = deviceData.AllDirectories.Count;
             for (int i = 0; i < len; i++)
             {
                 directory = deviceData.AllDirectories[i];
@@ -111,12 +97,12 @@ namespace hash
 
             return false;
         }
-        
-        public static bool FindFile(int  id, DeviceData deviceData, out File file)
+
+        public static bool FindFile(int id, DeviceData deviceData, out File file)
         {
             file = default(File);
-            
-            int len = deviceData.AllFiles.Length;
+
+            int len = deviceData.AllFiles.Count;
             for (int i = 0; i < len; i++)
             {
                 file = deviceData.AllFiles[i];
@@ -126,15 +112,51 @@ namespace hash
 
             return false;
         }
-        
+
         public static void OpenFile(File file)
         {
             Process.Start(file.RealFilePath);
-        }    
-    }
+        }
 
-    public static class DeviceSerializationUtil
-    {
-        
+        public static int CreateDevice(DeviceData deviceData)
+        {
+            Device newDevice = new Device();
+            newDevice.Id = new Random().Next(); // TODO: Real id
+            newDevice.Name = "NEW_DEVICE";
+            newDevice.StorageId = CreateStorage(deviceData);
+            newDevice.IP = "192.168.0.1";
+
+            deviceData.AllDevices.Add(newDevice);
+
+            return newDevice.Id;
+        }
+
+        public static int CreateStorage(DeviceData deviceData)
+        {
+            Storage storage = new Storage();
+            storage.Id = new Random().Next(); // TODO: Real id
+            storage.AllDirectoriesIds = new List<int>();
+            storage.AllFilesIds = new List<int>();
+
+            int root = CreateDirectory(deviceData, ROOT_DIR_NAME);
+            storage.AllDirectoriesIds.Add(root);
+
+            deviceData.AllStorages.Add(storage);
+
+            return storage.Id;
+        }
+
+        public static int CreateDirectory(DeviceData deviceData, string name)
+        {
+            Directory dir = new Directory();
+            dir.Id = new Random().Next(); // TODO: Real id
+            dir.ChildrenDirectoriesIds = new List<int>();
+            dir.FilesIds = new List<int>();
+            dir.Name = name;
+
+            deviceData.AllDirectories.Add(dir);
+
+            return dir.Id;
+        }
     }
 }
