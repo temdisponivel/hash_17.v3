@@ -44,11 +44,19 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_Code\Devices.cs" />
+    <Compile Include="_Code\Shell.cs" />
+    <Compile Include="_Code\SimpleCollection\Hash\SimpleSet.cs" />
+    <Compile Include="_Code\SimpleCollection\Hash\SimpleTable.cs" />
+    <Compile Include="_Code\SimpleCollection\Lists\SimpleList.cs" />
+    <Compile Include="_Code\SimpleCollection\Util\ClassPair.cs" />
+    <Compile Include="_Code\SimpleCollection\Util\Pair.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="_Code\SimpleCollection\.git" />
+    <Content Include="_Code\SimpleCollection\.gitignore" />
+    <Content Include="_Code\SimpleCollection\SimpleCollections.csproj" />
     <Content Include="_Docs\todo.txt" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
