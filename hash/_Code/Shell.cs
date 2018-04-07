@@ -41,6 +41,12 @@ namespace hash
         Duplicated = 1 << 3,
     }
     
+    public struct CommandLine
+    {
+        public string CommandName;
+        public SimpleList<Pair<string, string>> Args;
+    }
+
     public static class Shell
     {
         #region Properties
@@ -48,6 +54,18 @@ namespace hash
         public const char ArgumentPrefix = '-';
 
         #endregion
+
+        public static CommandLine GetCommandLine(string raw)
+        {
+            string command = GetCommandName(raw);
+            raw = RemoveCommandFromCommandLine(raw);
+            SimpleList<Pair<string, string>> list = GetArgumentsFromCommandLine(raw);
+            
+            CommandLine commandLine = new CommandLine();
+            commandLine.CommandName = command;
+            commandLine.Args = list;
+            return commandLine;
+        } 
 
         /// <summary>
         /// Returns the name of the command on the given commandLine.
@@ -87,7 +105,7 @@ namespace hash
             if (commandName.Length == commandLine.Length)
                 return string.Empty;
             else
-                return commandLine.Replace(commandName, string.Empty).Trim();
+                return commandLine.Remove(0, commandName.Length).Trim();
         }
 
         /// <summary>
@@ -122,10 +140,18 @@ namespace hash
                 var letter = commandLineWithoutCommand[i];
 
                 // Specials
-                var isEmpty = letter == ' ' && !ignoreNextSpecial;
-                var isQuote = letter == '"' && !ignoreNextSpecial;
-                var isBackSlash = letter == '\\' && !ignoreNextSpecial;
-                var isArgPrefix = letter == ArgumentPrefix && !ignoreNextSpecial;
+                bool isEmpty = letter == ' ';
+                bool isQuote = letter == '"';
+                bool isBackSlash = letter == '\\';
+                bool isArgPrefix = letter == ArgumentPrefix;
+
+                if (ignoreNextSpecial)
+                {
+                    isEmpty = false;
+                    isBackSlash = false;
+                    isArgPrefix = false;
+                    isQuote = isQuote && onQuote;
+                }
 
                 ignoreNextSpecial = false;
 
@@ -225,15 +251,18 @@ namespace hash
         /// Search for the first argument with the given name. Returns true if found the parameter, false otherse.
         /// The resulting parameter will be on the out Pair argument.
         /// </summary>
-        public static bool TryGetArgumentByName(SimpleList<Pair<string, string>> arguments, string parameterName, out Pair<string, string> parameter)
+        public static bool TryGetArgumentByName(SimpleList<Pair<string, string>> arguments, string parameterName,
+            out Pair<string, string> parameter)
         {
-            parameter = SList.Find(arguments, pair => string.Equals(pair.Key, parameterName, StringComparison.InvariantCultureIgnoreCase));
+            parameter = SList.Find(arguments,
+                pair => string.Equals(pair.Key, parameterName, StringComparison.InvariantCultureIgnoreCase));
 
             // since pair is a struct (always not null), we need to validate if the key AND value is null
             return !(string.IsNullOrEmpty(parameter.Key) && string.IsNullOrEmpty(parameter.Value));
         }
 
-        public static Pair<string, string> FindArgumentByName(SimpleList<Pair<string, string>> arguments, string parameterName)
+        public static Pair<string, string> FindArgumentByName(SimpleList<Pair<string, string>> arguments,
+            string parameterName)
         {
             Pair<string, string> arg;
             TryGetArgumentByName(arguments, parameterName, out arg);
@@ -250,7 +279,8 @@ namespace hash
         /// Search for the nth argument with the given name. Returns true if found the parameter, false otherse.
         /// The resulting parameter will be on the   out Pair argument.
         /// </summary>
-        public static bool TryGetNthArgumentByName(SimpleList<Pair<string, string>> arguments, string parameterName, out Pair<string, string> parameter, int n)
+        public static bool TryGetNthArgumentByName(SimpleList<Pair<string, string>> arguments, string parameterName,
+            out Pair<string, string> parameter, int n)
         {
             var count = 0;
             parameter = SList.Find(arguments, pair =>
@@ -293,13 +323,14 @@ namespace hash
         /// This will validate all options whether one of them failed.
         /// This returns true of EVERY argument is EverythingOk.
         /// </summary>
-        public static bool ValidateArguments(SimpleList<Pair<string, string>> arguments, CommandLineArgValidationOption[] options)
+        public static bool ValidateArguments(SimpleList<Pair<string, string>> arguments,
+            CommandLineArgValidationOption[] options)
         {
             bool result = true;
             for (int i = 0; i < options.Length; i++)
             {
                 var opt = options[i];
-                
+
                 if ((opt.Requirements & ArgRequirement.Unique) != 0)
                 {
                     if (IsArgumentDuplicated(arguments, opt.ArgumentName))
@@ -356,7 +387,8 @@ namespace hash
         /// Returns a list of all unknown arguments.
         /// An argument is unknown when it's present on the arguments list but not on the knownArguments list.
         /// </summary>
-        public static SimpleList<Pair<string, string>> GetUnknownArguments(SimpleList<Pair<string, string>> arguments, string[] knownArguments)
+        public static SimpleList<Pair<string, string>> GetUnknownArguments(SimpleList<Pair<string, string>> arguments,
+            string[] knownArguments)
         {
             var result = SList.Create<Pair<string, string>>(1);
             if (AreAllArgumentsKnown(arguments, knownArguments))
@@ -380,7 +412,8 @@ namespace hash
         /// Use the hasUnknownArg and hasNotOkParameter to known the results of each operation.
         /// </summary>
         public static bool FullArgValidation(SimpleList<Pair<string, string>> arguments,
-            CommandLineArgValidationOption[] options, string[] knownArguments, out bool areArgumentsKnown, out bool areArgumentsOk)
+            CommandLineArgValidationOption[] options, string[] knownArguments, out bool areArgumentsKnown,
+            out bool areArgumentsOk)
         {
             areArgumentsOk = ValidateArguments(arguments, options);
             areArgumentsKnown = AreAllArgumentsKnown(arguments, knownArguments);

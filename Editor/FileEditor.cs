@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using hash;
+using SimpleCollections.Lists;
 
 namespace Editor
 {
@@ -22,10 +23,10 @@ namespace Editor
             DeviceList.FullRowSelect = true;
 
             CurrentDeviceData = new DeviceData();
-            CurrentDeviceData.AllDevices = new List<Device>();
-            CurrentDeviceData.AllStorages = new List<Storage>();
-            CurrentDeviceData.AllDirectories = new List<Directory>();
-            CurrentDeviceData.AllFiles = new List<File>();
+            CurrentDeviceData.AllDevices = new SimpleList<Device>();
+            CurrentDeviceData.AllStorages = new SimpleList<Storage>();
+            CurrentDeviceData.AllDirectories = new SimpleList<Directory>();
+            CurrentDeviceData.AllFiles = new SimpleList<File>();
         }
 
         private void AddDeviceButton_Click(object sender, EventArgs e)
@@ -38,7 +39,7 @@ namespace Editor
         {
             DeviceList.Items.Clear();
 
-            List<Device> devices = CurrentDeviceData.AllDevices;
+            SimpleList<Device> devices = CurrentDeviceData.AllDevices;
             for (int i = 0; i < devices.Count; i++)
             {
                 Device device = devices[i];

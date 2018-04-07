@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using SimpleCollections.Lists;
 
 namespace hash
 {
@@ -22,15 +23,15 @@ namespace hash
     {
         public int Id;
         public string Name;
-        public List<int> ChildrenDirectoriesIds;
-        public List<int> FilesIds;
+        public SimpleList<int> ChildrenDirectoriesIds;
+        public SimpleList<int> FilesIds;
     }
 
     public struct Storage
     {
         public int Id;
-        public List<int> AllFilesIds;
-        public List<int> AllDirectoriesIds;
+        public SimpleList<int> AllFilesIds;
+        public SimpleList<int> AllDirectoriesIds;
     }
 
     public struct Device
@@ -43,10 +44,10 @@ namespace hash
 
     public struct DeviceData
     {
-        public List<Device> AllDevices;
-        public List<Storage> AllStorages;
-        public List<File> AllFiles;
-        public List<Directory> AllDirectories;
+        public SimpleList<Device> AllDevices;
+        public SimpleList<Storage> AllStorages;
+        public SimpleList<File> AllFiles;
+        public SimpleList<Directory> AllDirectories;
     }
 
     public static class DeviceUtil
@@ -126,7 +127,7 @@ namespace hash
             newDevice.StorageId = CreateStorage(deviceData);
             newDevice.IP = "192.168.0.1";
 
-            deviceData.AllDevices.Add(newDevice);
+            SList.Add(deviceData.AllDevices, newDevice);
 
             return newDevice.Id;
         }
@@ -135,13 +136,13 @@ namespace hash
         {
             Storage storage = new Storage();
             storage.Id = new Random().Next(); // TODO: Real id
-            storage.AllDirectoriesIds = new List<int>();
-            storage.AllFilesIds = new List<int>();
+            storage.AllDirectoriesIds = new SimpleList<int>();
+            storage.AllFilesIds = new SimpleList<int>();
 
             int root = CreateDirectory(deviceData, ROOT_DIR_NAME);
-            storage.AllDirectoriesIds.Add(root);
+            SList.Add(storage.AllDirectoriesIds, root);
 
-            deviceData.AllStorages.Add(storage);
+            SList.Add(deviceData.AllStorages, storage);
 
             return storage.Id;
         }
@@ -150,11 +151,11 @@ namespace hash
         {
             Directory dir = new Directory();
             dir.Id = new Random().Next(); // TODO: Real id
-            dir.ChildrenDirectoriesIds = new List<int>();
-            dir.FilesIds = new List<int>();
+            dir.ChildrenDirectoriesIds = new SimpleList<int>();
+            dir.FilesIds = new SimpleList<int>();
             dir.Name = name;
 
-            deviceData.AllDirectories.Add(dir);
+            SList.Add(deviceData.AllDirectories, dir);
 
             return dir.Id;
         }

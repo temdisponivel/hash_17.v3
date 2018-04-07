@@ -117,7 +117,7 @@ namespace SimpleCollections.Lists
         public static SimpleList<T> Create<T>(int size)
         {
 #if DEBUG
-            System.Diagnostics.Debug.Assert(size <= 0, "SIMPLE LIST SIZE MUST BE GREATER THAN 0! SIZE: " + size);
+            System.Diagnostics.Debug.Assert(size > 0, "SIMPLE LIST SIZE MUST BE GREATER THAN 0! SIZE: " + size);
 #if USE_UNITY
             if (size <= 0)
                 UnityEngine.Debug.LogError("SIMPLE LIST SIZE MUST BE GREATER THAN 0! SIZE: " + size);
@@ -254,7 +254,7 @@ namespace SimpleCollections.Lists
             if (index < 0 || list.Count <= index)
             {
                 var msg = "THE GIVEN INDEX MUST BE SMALLER THAN COUNT AND GREATER THAN 0. INDEX: " + index;
-                System.Diagnostics.Debug.Assert(true, msg);
+                System.Diagnostics.Debug.Assert(false, msg);
 #if USE_UNITY
                 UnityEngine.Debug.LogError(msg);
 #endif
@@ -495,7 +495,7 @@ namespace SimpleCollections.Lists
             if (from.Count < fromStartIndex + count)
             {
                 var msg = string.Format("from.Count >= fromStartIndex + count MUST BE TRUE!\n from.Count: {0} - fromStartIndex: {1} - count {2}", from.Count, fromStartIndex, count);
-                System.Diagnostics.Debug.Assert(true, msg);
+                System.Diagnostics.Debug.Assert(false, msg);
 
 #if USE_UNITY
                 UnityEngine.Debug.LogError(msg);
@@ -504,7 +504,7 @@ namespace SimpleCollections.Lists
             if (to.Capacity < toStartIndex + count)
             {
                 var msg = string.Format("to.Capacity >= toStartIndex + count MUST BE TRUE!\n to.Capacity: {0} - toStartIndex: {1} - count {2}", to.Capacity, toStartIndex, count);
-                System.Diagnostics.Debug.Assert(true, msg);
+                System.Diagnostics.Debug.Assert(false, msg);
 
 #if USE_UNITY
                 UnityEngine.Debug.LogError(msg);
